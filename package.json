@@ -12,10 +12,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/apollo-passport/apollo-passport-local"
+    "url": "https://github.com/apollo-passport/local"
   },
   "bugs": {
-    "url": "https://github.com/apollo-passport/apollo-passport-local/issues"
+    "url": "https://github.com/apollo-passport/local/issues"
   },
   "keywords": [
     "apollo",
