@@ -1,7 +1,7 @@
 machine:
 
   node:
-    version: 6.3.0
+    version: 4.2.6
 
   post:
     - source /etc/lsb-release && echo "deb http://download.rethinkdb.com/apt $DISTRIB_CODENAME main" | sudo tee /etc/apt/sources.list.d/rethinkdb.list
