@@ -3,7 +3,7 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 
 chai.use(chaiAsPromised);
-chai.should();
+const should = chai.should();
 
 // might be useful elsewhere too...
 const passportStub = {
@@ -30,12 +30,13 @@ const passportStub = {
 
 const context = {
   createTokenFromUser: () => 'token',
-  passport: passportStub
+  passport: passportStub,
+  hashPassword: pass => new Promise(resolve => resolve(`hashed:${pass}`))
 };
 
 const resolvers = proxyquire('./resolvers', { passport: passportStub }).default;
 
-describe('resolvers', () => {
+describe('apollo-passport-local', () => {
 
   describe('passportStub', () => {
 
@@ -65,28 +66,128 @@ describe('resolvers', () => {
 
   });
 
-  describe('local', () => {
+  describe('resolvers', () => {
 
-    describe('passportLoginEmail', () => {
+    describe('apCreateUserEmailPassword()', () => {
+      const errMsg = "foo";
 
-      const passportLoginEmail
-        = resolvers.RootMutation.passportLoginEmail.bind(context);
+      const apCreateUserEmailPassword
+        = resolvers.RootMutation.apCreateUserEmailPassword.bind(context);
+
+      it('returns an error when trying to re-register an existing email', async () => {
+        context.db = { fetchUserByEmail: async () => ({ userId: 1 }) };
+
+        const result = await apCreateUserEmailPassword(null,
+          { email: 'email', password: 'password '});
+        result.should.deep.equal({
+          error: "E-mail already registered",
+          token: ""
+        });
+      });
+
+      it('catches createUser errors', async () => {
+        context.db = { fetchUserByEmail: async () => null };
+        context.createUser = async () => { throw new Error(errMsg) };
+
+        const result = await apCreateUserEmailPassword(null,
+          { email: 'email', password: 'password '});
+        result.should.deep.equal({
+          error: errMsg,
+          token: ""
+        });
+      });
+
+      it('calls createUser with correct args, logs in user', async () => {
+        context.db = { fetchUserByEmail: async () => null };
+        context.createUser = async function(user) {
+          user.should.deep.equal({
+            emails: [ { address: 'email' }],
+            services: { password: { password: 'hashed:password ' }}
+          });
+          return 'elizabeth';
+        };
+        context.createTokenFromUser = () => 'token';
+
+        const result = await apCreateUserEmailPassword(null,
+          { email: 'email', password: 'password '});
+        result.should.deep.equal({
+          error: "",
+          token: 'token'
+        });
+      });
+
+    });
+
+    describe('apLoginEmailPassword()', () => {
+
+      const apLoginEmailPassword
+        = resolvers.RootMutation.apLoginEmailPassword.bind(context);
 
       it('throws on a real error', () => {
         // I don't know how to check if an async function throws
-        passportLoginEmail(null, { override: 'error' }).should.be.rejected;
+        apLoginEmailPassword(null, { override: 'error' }).should.be.rejected;
       });
 
       it('passes the user', async () => {
-        const result = await passportLoginEmail(null, { override: 'user' });
+        const result = await apLoginEmailPassword(null, { override: 'user' });
         result.error.should.equal("");
         result.token.should.equal('token');
       });
 
       it('passes an error string (not a throw)', async () => {
-        const result = await passportLoginEmail(null, { override: 'info' });
+        const result = await apLoginEmailPassword(null, { override: 'info' });
         result.error.should.equal("info");
         result.token.should.equal("");
+      });
+
+    });
+
+    describe('apSetPassword', () => {
+
+      const password = 'password';
+      const apSetUserPassword
+        = resolvers.RootMutation.apSetUserPassword.bind(context);
+
+      it('only works for logged in matching userId', async () => {
+        context.db = {
+          async assertUserServiceData() {}
+        };
+
+        let result = await apSetUserPassword(null,
+          { userId: 1, password }, { auth: { userId: 2 } });
+        result.should.equal("Not logged in as 1");
+
+        result = await apSetUserPassword(null, { userId: 1, password }, {});
+        result.should.equal("Not logged in as 1");
+
+        result = await apSetUserPassword(null, { userId: 1, password });
+        result.should.equal("Not logged in as 1");
+      });
+
+      it('calls db.assertUserServiceData correctly and returns no error', async () => {
+        context.db = {
+          async assertUserServiceData(userId, service, data) {
+            should.exist(userId);
+            service.should.equal('password');
+            data.should.deep.equal({ password });
+          }
+        };
+
+        const result = await apSetUserPassword(null,
+          { userId: 1, password }, { auth: { userId: 1 } });
+        result.should.equal("");
+      });
+
+      it('catches errors from db.assertUserServiceData', async () => {
+        context.db = {
+          async assertUserServiceData() {
+            throw new Error('foo')
+          }
+        };
+
+        const result = await apSetUserPassword(null,
+          { userId: 1, password }, { auth: { userId: 1 } });
+        result.should.equal('foo');
       });
 
     });

@@ -1,39 +1,99 @@
 import gql from 'graphql-tag';
 import createHash from 'sha.js';
 
-const mutation = gql`
-mutation login (
-  $email: String!
-  $password: String!
-) {
-  passportLoginEmail (
-    email: $email
-    password: $password
-  ) {
-    error
-    token
-  }
+function hashPassword(plaintext) {
+  return createHash('sha256').update(plaintext).digest('hex');
 }
-`;
+
+const mutation = {
+  createUserEmailPassword: gql`
+    mutation login (
+      $email: String!
+      $password: String!
+    ) {
+      apCreateUserEmailPassword (
+        email: $email
+        password: $password
+      ) {
+        error
+        token
+      }
+    }
+  `,
+
+  loginWithEmailPassword: gql`
+    mutation login (
+      $email: String!
+      $password: String!
+    ) {
+      apLoginEmailPassword (
+        email: $email
+        password: $password
+      ) {
+        error
+        token
+      }
+    }
+  `,
+
+  setUserPassword: gql`
+    mutation login (
+      $userId: String!
+      $password: String!
+    ) {
+      apSetUserPassword (
+        userId: $userId
+        password: $password
+      ) {
+        error
+        token
+      }
+    }
+  `
+};
 
 const extensionMethods = {
 
-  async loginWithEmail(email, password) {
+  async createUserEmailPassword(email, password) {
     this.loginStart();
 
     const result = await this.apolloClient.mutate({
-      mutation,
+      mutation: mutation.createUserEmailPassword,
       variables: {
         email,
-        password: createHash('sha256').update(password).digest('hex')
+        password: hashPassword(password)
       }
     });
 
-    this.loginComplete(result, 'passportLoginEmail');
+    this.loginComplete(result, 'apCreateUserEmailPassword');
   },
 
-  signupWithEmail(email, password) {
+  async loginWithEmailPassword(email, password) {
+    this.loginStart();
 
+    const result = await this.apolloClient.mutate({
+      mutation: mutation.loginWithEmailPassword,
+      variables: {
+        email,
+        password: hashPassword(password)
+      }
+    });
+
+    this.loginComplete(result, 'apLoginEmailPassword');
+  },
+
+  // what status updates should this get?
+  // logic could also be used for re-requesting additional permissions on services
+  async setUserPassword(userId, password) {
+    const result = await this.apolloClient.mutate({
+      mutation: mutation.loginWithEmail,
+      variables: {
+        userId,
+        password: hashPassword(password)
+      }
+    });
+
+    console.log(result);
   }
 
 };

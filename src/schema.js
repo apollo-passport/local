@@ -2,7 +2,9 @@
 
 const typeDefinitions = `
 type RootMutation {
-  passportLoginEmail (email: String!, password: String!): PassportResult
+  apCreateUserEmailPassword (email: String!, password: String!): PassportResult,
+  apSetUserPassword (userId: String!, password: String!): String,
+  apLoginEmailPassword (email: String!, password: String!): PassportResult
 }
 `;
 

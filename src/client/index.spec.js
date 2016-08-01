@@ -22,7 +22,7 @@ const should = chai.should();
 
 describe('ApolloPassport - strategies - local - client', () => {
 
-  describe('loginWithEmail()', () => {
+  describe('loginWithEmailPassword()', () => {
 
     it('handles errors', (done) => {
       const apolloClient = {
@@ -44,7 +44,7 @@ describe('ApolloPassport - strategies - local - client', () => {
       const ap = new ApolloPassport({ apolloClient });
       ap.use('local', LocalStrategy);
 
-      ap.loginWithEmail('a', 'b').then(() => {
+      ap.loginWithEmailPassword('a', 'b').then(() => {
         // Nothing to test for for now.
         done();
       });
@@ -56,7 +56,7 @@ describe('ApolloPassport - strategies - local - client', () => {
           return new Promise(resolve => {
             resolve({
               data: {
-                passportLoginEmail: { token }
+                apLoginEmailPassword: { token }
               }
             });
           });
@@ -66,14 +66,14 @@ describe('ApolloPassport - strategies - local - client', () => {
       const ap = new ApolloPassport({ apolloClient });
       ap.use('local', LocalStrategy);
 
-      ap.loginWithEmail('a', 'b').then(() => {
+      ap.loginWithEmailPassword('a', 'b').then(() => {
         ap.getState().should.deep.equal({
           data: decodedToken,
           verified: true,
           error: null
         });
         done();
-      });
+      }).catch(err => console.log(err));
 
     });
 

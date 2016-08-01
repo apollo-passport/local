@@ -23,19 +23,25 @@ describe('apollo-passport-local - verify', () => {
   context.db = {
     fetchUserByEmail(email) {
       return new Promise((resolve, reject) => {
-        if (email === 'error@test.com')
+        if (email === 'error-email')
           return reject(error);
-        else if (email !== 'test@test.com')
+        else if (email === 'non-existing-email')
           return resolve(null);
-        else
-          resolve({ id: 'user1', password: 'password' });
+        else if (email === 'no-password-set')
+          return resolve({ id: 'user1 '});
+        else if (email === 'valid-user')
+          resolve({
+            id: 'user1',
+            services: { password: { password: 'password' } }
+          });
+        else throw new Error("unknown test email: " + email);
       });
     }
   }
 
   it('should catch db errors and pass to callback', (done) => {
 
-    verify("error@test.com", "bar", (err, user, info) => {
+    verify("error-email", "bar", (err, user, info) => {
       err.should.equal(error);
       should.equal(user, undefined);
       should.not.exist(info);
@@ -57,7 +63,7 @@ describe('apollo-passport-local - verify', () => {
 
   it('should fail on no matching password', (done) => {
 
-    verify("test@test.com", "non-matching-password", (err, user, info) => {
+    verify("valid-user", "non-matching-password", (err, user, info) => {
       should.not.exist(err);
       user.should.be.false;
       info.should.equal("Invalid password");
@@ -66,9 +72,20 @@ describe('apollo-passport-local - verify', () => {
 
   });
 
+  it('should fail when user has no password set', (done) => {
+
+    verify("no-password-set", "password", (err, user, info) => {
+      should.not.exist(err);
+      user.should.be.false;
+      info.should.equal("No password set");
+      done();
+    });
+
+  });
+
   it('should return a matching user when correct password given', (done) => {
 
-    verify("test@test.com", "password", (err, user, info) => {
+    verify("valid-user", "password", (err, user, info) => {
       should.not.exist(err);
       user.id.should.equal("user1");
       should.not.exist(info);
@@ -80,7 +97,7 @@ describe('apollo-passport-local - verify', () => {
   it('should call cb(err) on a thrown error', (done) => {
 
     comparePasswordError = true;
-    verify("test@test.com", "test123", (err, user) => {
+    verify("valid-user", "test123", (err, user) => {
       err.should.equal(error);
       should.equal(user, undefined);
       comparePasswordError = false; // reset for next test

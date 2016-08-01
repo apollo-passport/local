@@ -1,9 +1,39 @@
-// TODO needs to move to local dir / package
+import bcrypt from 'bcrypt';
 
 const resolvers = {
 
   RootMutation: {
-    passportLoginEmail(root, args) {
+    async apCreateUserEmailPassword(root, { email, password }) {
+      // First check if we already have a user with that email
+      const existing = await this.db.fetchUserByEmail(email);
+      if (existing)
+        return { token: "", error: "E-mail already registered" };
+
+      const user = {
+        emails: [ { address: email } ],
+        services: { password: { password: await this.hashPassword(password) } }
+      };
+
+      let userId;
+      try {
+        userId = await this.createUser(user);
+      } catch (err) {
+        return {
+          error: err.message,
+          token: ""
+        };
+      }
+
+      // XXX correct id field?
+      user.id = userId;
+
+      return {
+        error: "",
+        token: this.createTokenFromUser(user)
+      };
+    },
+
+    apLoginEmailPassword(root, args) {
       return new Promise((resolve, reject) => {
 
         this.passport.authenticate('local', (err, user, info) => {
@@ -22,8 +52,21 @@ const resolvers = {
         })({ query: args }); // fake req.query using args from graphQL
 
       });
+    },
 
+    // TODO require existing password
+    async apSetUserPassword(root, { userId, password }, context) {
+      if (!(context && context.auth && context.auth.userId === userId))
+        return "Not logged in as " + userId;
+
+      try {
+        await this.db.assertUserServiceData(userId, 'password', { password });
+      } catch (err) {
+        return err.message;
+      }
+      return "";
     }
+
   }
 
 };

@@ -4,7 +4,12 @@ export default function verify(email, password, done) {
       if (!user)
         return done(null, false, "Invalid email");
 
-      this.comparePassword(password, user.password, (err, match) => {
+      const storedPassword = user && user.services && user.services.password
+        && user.services.password.password;
+      if (!storedPassword)
+        return done(null, false, "No password set");
+
+      this.comparePassword(password, storedPassword, (err, match) => {
         if (err)
           done(err);
         else if (match)
