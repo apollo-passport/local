@@ -83,13 +83,14 @@ const extensionMethods = {
   },
 
   // what status updates should this get?
-  // logic could also be used for re-requesting additional permissions on services
-  async setUserPassword(userId, password) {
+  // that logic could also be used for re-requesting additional permissions on services
+  async updateUserPassword(userId, oldPassword, newPassword) {
     const result = await this.apolloClient.mutate({
       mutation: mutation.loginWithEmail,
       variables: {
         userId,
-        password: hashPassword(password)
+        oldPassword: hashPassword(oldPassword),
+        newPassword: hashPassword(newPassword)
       }
     });
 

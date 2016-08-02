@@ -1,5 +1,3 @@
-import bcrypt from 'bcrypt';
-
 const resolvers = {
 
   RootMutation: {
@@ -54,13 +52,25 @@ const resolvers = {
       });
     },
 
-    // TODO require existing password
-    async apSetUserPassword(root, { userId, password }, context) {
+    async apUpdateUserPassword(root, { userId, oldPassword, newPassword }, context) {
       if (!(context && context.auth && context.auth.userId === userId))
         return "Not logged in as " + userId;
 
+      const user = await this.db.fetchUserByEmail(userId);
+      const storedPassword = user && user.services && user.services.password
+        && user.services.password.password;
+
+      // TODO allow no password only if email set.  allow email as part of query?
+
+      if (storedPassword) {
+        const match = await this.comparePassword(oldPassword, storedPassword);
+        if (!match)
+          return "Invalid old password";
+      }
+
       try {
-        await this.db.assertUserServiceData(userId, 'password', { password });
+        await this.db.assertUserServiceData(userId,
+          'password', { password: newPassword });
       } catch (err) {
         return err.message;
       }

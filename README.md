@@ -6,6 +6,32 @@ Local strategy using email address and hashed, bcrypted password.
 
 Copyright (c) 2016 by Gadi Cohen, released under the MIT license.
 
+## Features
+
+
+
 ## Usage
 
 See https://github.com/gadicc/apollo-passport.
+
+```sh
+$ npm i --save passport-local apollo-passport-local
+```
+
+**Server**
+
+```js
+import { Strategy as LocalStrategy } from 'passport-local';
+
+// Your previously created ApolloPassport instance...
+apolloPassport.use('local', LocalStrategy /*, options */);
+```
+
+**Client**
+
+```js
+import ApolloPassportLocal from 'apollo-passport-local/client';
+
+// Your previously created ApolloPassport instance...
+apolloPassport.use('local', ApolloPassportLocal);
+```

@@ -29,7 +29,6 @@ const passportStub = {
 }
 
 const context = {
-  createTokenFromUser: () => 'token',
   passport: passportStub,
   hashPassword: pass => new Promise(resolve => resolve(`hashed:${pass}`))
 };
@@ -142,30 +141,34 @@ describe('apollo-passport-local', () => {
 
     });
 
-    describe('apSetPassword', () => {
+    describe('apUpdateUserPassword', () => {
 
       const password = 'password';
-      const apSetUserPassword
-        = resolvers.RootMutation.apSetUserPassword.bind(context);
+      const apUpdateUserPassword
+        = resolvers.RootMutation.apUpdateUserPassword.bind(context);
 
       it('only works for logged in matching userId', async () => {
         context.db = {
           async assertUserServiceData() {}
         };
 
-        let result = await apSetUserPassword(null,
+        let result = await apUpdateUserPassword(null,
           { userId: 1, password }, { auth: { userId: 2 } });
         result.should.equal("Not logged in as 1");
 
-        result = await apSetUserPassword(null, { userId: 1, password }, {});
+        result = await apUpdateUserPassword(null, { userId: 1, password }, {});
         result.should.equal("Not logged in as 1");
 
-        result = await apSetUserPassword(null, { userId: 1, password });
+        result = await apUpdateUserPassword(null, { userId: 1, password });
         result.should.equal("Not logged in as 1");
       });
 
       it('calls db.assertUserServiceData correctly and returns no error', async () => {
+        context.comparePassword = async () => true;
         context.db = {
+          fetchUserByEmail: async () => ({
+            services: { password: { password: password }}
+          }),
           async assertUserServiceData(userId, service, data) {
             should.exist(userId);
             service.should.equal('password');
@@ -173,19 +176,23 @@ describe('apollo-passport-local', () => {
           }
         };
 
-        const result = await apSetUserPassword(null,
-          { userId: 1, password }, { auth: { userId: 1 } });
+        const result = await apUpdateUserPassword(null,
+          { userId: 1, oldPassword: password, newPassword: password }, { auth: { userId: 1 } });
         result.should.equal("");
       });
 
       it('catches errors from db.assertUserServiceData', async () => {
+        context.comparePassword = async () => true;
         context.db = {
+          fetchUserByEmail: async () => ({
+            services: { password: { password: password }}
+          }),
           async assertUserServiceData() {
             throw new Error('foo')
           }
         };
 
-        const result = await apSetUserPassword(null,
+        const result = await apUpdateUserPassword(null,
           { userId: 1, password }, { auth: { userId: 1 } });
         result.should.equal('foo');
       });
