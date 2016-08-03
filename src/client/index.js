@@ -39,15 +39,14 @@ const mutation = {
   setUserPassword: gql`
     mutation login (
       $userId: String!
-      $password: String!
+      $oldPassword: String!
+      $newPassword: String!
     ) {
-      apSetUserPassword (
+      apUpdateUserPassword (
         userId: $userId
-        password: $password
-      ) {
-        error
-        token
-      }
+        oldPassword: $oldPassword
+        newPassword: $newPassword
+      )
     }
   `
 };
@@ -85,16 +84,14 @@ const extensionMethods = {
   // what status updates should this get?
   // that logic could also be used for re-requesting additional permissions on services
   async updateUserPassword(userId, oldPassword, newPassword) {
-    const result = await this.apolloClient.mutate({
-      mutation: mutation.loginWithEmail,
+    return await this.apolloClient.mutate({
+      mutation: mutation.setUserPassword,
       variables: {
         userId,
         oldPassword: hashPassword(oldPassword),
         newPassword: hashPassword(newPassword)
       }
     });
-
-    console.log(result);
   }
 
 };
@@ -108,4 +105,5 @@ class LocalStrategy {
 
 }
 
+export { hashPassword };
 export default LocalStrategy;

@@ -10,7 +10,7 @@ const extensionMethods = {
 
     return new Promise((resolve, reject) => {
       bcrypt.hash(password, BCRYPT_SALT_ROUNDS,
-        (err, res) => { err ? reject(err) : resolve(res) });
+        (err, res) => err ? reject(err) : resolve(res) );
     });
   },
 
@@ -20,7 +20,7 @@ const extensionMethods = {
 
     return new Promise((resolve, reject) => {
       bcrypt.compare(password, hash,
-        (err, res) => { err ? reject(err) : resolve(res) });
+        (err, res) => err ? reject(err) : resolve(res) );
     });
   }
 

@@ -1,8 +1,11 @@
 import chai from 'chai';
+import chaiAsPromised from "chai-as-promised";
+
 import 'regenerator-runtime/runtime';
 
 import _verify from './verify';
 
+chai.use(chaiAsPromised);
 const should = chai.should();
 
 describe('apollo-passport-local - verify', () => {
@@ -38,6 +41,10 @@ describe('apollo-passport-local - verify', () => {
       });
     }
   }
+
+  it('self-test: throws on unknown test-email', () => {
+    context.db.fetchUserByEmail('invalid').should.reject;
+  });
 
   it('should catch db errors and pass to callback', (done) => {
 

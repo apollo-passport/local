@@ -165,14 +165,15 @@ describe('apollo-passport-local', () => {
 
       it('calls db.assertUserServiceData correctly and returns no error', async () => {
         context.comparePassword = async () => true;
+        context.hashPassword = async (password) => `hashed:${password}`;
         context.db = {
-          fetchUserByEmail: async () => ({
+          fetchUserById: async () => ({
             services: { password: { password: password }}
           }),
           async assertUserServiceData(userId, service, data) {
             should.exist(userId);
             service.should.equal('password');
-            data.should.deep.equal({ password });
+            data.should.deep.equal({ password: `hashed:${password}` });
           }
         };
 
@@ -184,7 +185,7 @@ describe('apollo-passport-local', () => {
       it('catches errors from db.assertUserServiceData', async () => {
         context.comparePassword = async () => true;
         context.db = {
-          fetchUserByEmail: async () => ({
+          fetchUserById: async () => ({
             services: { password: { password: password }}
           }),
           async assertUserServiceData() {

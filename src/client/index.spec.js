@@ -1,82 +1,75 @@
-import ApolloPassport from 'apollo-passport/lib/client';
-import LocalStrategy from './index';
 import chai from 'chai';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import 'regenerator-runtime/runtime';
 
-// dupes from apollo-passport; TODO factor out
-global.window = global;
-const localStorage = window.localStorage = {
-  items: {},
-  getItem: (name) => localStorage.items[name],
-  setItem: (name, value) => localStorage.items[name] = value
-//  removeItem: (name) => delete localStorage.items[name]
-};
-const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ';
-const decodedToken = {
-  "sub": "1234567890",
-  "name": "John Doe",
-  "admin": true
-};
+import LocalStrategy, { hashPassword } from './index';
 
 const should = chai.should();
+chai.use(sinonChai);
 
-describe('ApolloPassport - strategies - local - client', () => {
+describe('apollo-passport-local - client', () => {
 
-  describe('loginWithEmailPassword()', () => {
+  const ap = {
+    apolloClient: {},
+    extendWith(obj) {
+      for (var key in obj)
+        this[key] = obj[key];
+    }
+  };
 
-    it('handles errors', (done) => {
-      const apolloClient = {
-        mutate() {
-          return new Promise(resolve => {
-            resolve({
-              errors: [
-                {
-                  // think this is right, double check TODO
-                  location: '',
-                  message: 'an error'
-                }
-              ]
-            });
-          });
-        }
-      };
+  it('createUserEmailPassword()', async () => {
+    ap.loginStart = sinon.spy();
+    ap.loginComplete = sinon.spy();
+    ap.apolloClient.mutate = sinon.spy(() => "result");
 
-      const ap = new ApolloPassport({ apolloClient });
-      ap.use('local', LocalStrategy);
+    new LocalStrategy(ap);
+    await ap.createUserEmailPassword('email', 'password');
 
-      ap.loginWithEmailPassword('a', 'b').then(() => {
-        // Nothing to test for for now.
-        done();
-      });
+    ap.loginStart.should.have.been.calledBefore(ap.apolloClient);
+    ap.apolloClient.mutate.should.have.been.calledWithMatch({
+      variables: {
+        email: 'email',
+        password: hashPassword('password')
+      }
     });
+    ap.loginComplete.should.have.been.calledAfter(ap.apolloClient.mutate);
+    ap.loginComplete.should.have.been.calledWith("result", "apCreateUserEmailPassword");
+  });
 
-    it('sets state', (done) => {
-      const apolloClient = {
-        mutate() {
-          return new Promise(resolve => {
-            resolve({
-              data: {
-                apLoginEmailPassword: { token }
-              }
-            });
-          });
-        }
-      };
+  it('loginWithEmailPassword()', async () => {
+    ap.loginStart = sinon.spy();
+    ap.loginComplete = sinon.spy();
+    ap.apolloClient.mutate = sinon.spy(() => "result");
 
-      const ap = new ApolloPassport({ apolloClient });
-      ap.use('local', LocalStrategy);
+    new LocalStrategy(ap);
+    await ap.loginWithEmailPassword('email', 'password');
 
-      ap.loginWithEmailPassword('a', 'b').then(() => {
-        ap.getState().should.deep.equal({
-          data: decodedToken,
-          verified: true,
-          error: null
-        });
-        done();
-      }).catch(err => console.log(err));
-
+    ap.loginStart.should.have.been.calledBefore(ap.apolloClient);
+    ap.apolloClient.mutate.should.have.been.calledWithMatch({
+      variables: {
+        email: 'email',
+        password: hashPassword('password')
+      }
     });
+    ap.loginComplete.should.have.been.calledAfter(ap.apolloClient.mutate);
+    ap.loginComplete.should.have.been.calledWith("result", "apLoginEmailPassword");
+  });
 
+  it('updateUserPassword()', async () => {
+    ap.apolloClient.mutate = sinon.spy(() => "result");
+
+    new LocalStrategy(ap);
+    const result = await ap.updateUserPassword('userId', 'oldPass', 'newPass');
+
+    ap.apolloClient.mutate.should.have.been.calledWithMatch({
+      variables: {
+        userId: 'userId',
+        oldPassword: hashPassword('oldPass'),
+        newPassword: hashPassword('newPass')
+      }
+    });
+    result.should.equal("result");
   });
 
 });

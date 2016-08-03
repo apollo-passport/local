@@ -56,21 +56,29 @@ const resolvers = {
       if (!(context && context.auth && context.auth.userId === userId))
         return "Not logged in as " + userId;
 
-      const user = await this.db.fetchUserByEmail(userId);
+      const user = await this.db.fetchUserById(userId);
+      if (!user)
+        return 'No such userId';
+
+      console.log(user);
       const storedPassword = user && user.services && user.services.password
         && user.services.password.password;
+      console.log('storedPassword', storedPassword);
 
       // TODO allow no password only if email set.  allow email as part of query?
 
       if (storedPassword) {
         const match = await this.comparePassword(oldPassword, storedPassword);
+        console.log('match', match);
         if (!match)
           return "Invalid old password";
+      } else {
+        return "No old password set";
       }
 
       try {
         await this.db.assertUserServiceData(userId,
-          'password', { password: newPassword });
+          'password', { password: await this.hashPassword(newPassword) });
       } catch (err) {
         return err.message;
       }
