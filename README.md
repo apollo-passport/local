@@ -8,11 +8,14 @@ Copyright (c) 2016 by Gadi Cohen, released under the MIT license.
 
 ## Features
 
-
+* Authenticate users with an **email and password**.
+* Passwords stored in the database are encrypted with [bcrypt](https://en.wikipedia.org/wiki/Bcrypt).
 
 ## Usage
 
 See https://github.com/gadicc/apollo-passport.
+
+Note: you don't usually need a special `apollo-passport-xxx` package for every passport strategy.  `apollo-passport-local` is a special case because of it's dependencies, e.g. `bcrypt` and some client-side hashing.
 
 ```sh
 $ npm i --save passport-local apollo-passport-local

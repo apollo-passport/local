@@ -22,7 +22,8 @@
     "passport",
     "apollo-passport",
     "auth",
-    "authentication"
+    "authentication",
+    "apollo-passport-strategy"
   ],
   "author": "Gadi Cohen",
   "license": "MIT",
