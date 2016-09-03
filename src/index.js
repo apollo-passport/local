@@ -1,4 +1,14 @@
+// Core node modules && npm packages
 import bcrypt from 'bcrypt';
+
+// Passport modules
+import { Strategy as LocalStrategy } from 'passport-local';
+
+// Local modules
+import defaultOptions from './defaultOptions';
+import verify from './verify';
+import resolvers from './resolvers';
+import schema from './schema';
 
 const BCRYPT_SALT_ROUNDS=10;
 
@@ -26,13 +36,25 @@ const extensionMethods = {
 
 };
 
-class LocalStrategy {
+class AugmentedLocalStrategy {
 
-  constructor(apolloPassport) {
+  constructor(apolloPassport, options) {
     this.ap = apolloPassport;
-    apolloPassport.extendWith(extensionMethods);
+
+    if (!options)
+      options = defaultOptions;
+
+    this.strategy = new LocalStrategy(options, verify.bind(this.ap));
+
+    this.resolvers = resolvers;
+    this.schema = schema;
+
+    this.ap.extendWith(extensionMethods);
   }
 
 }
 
-export default LocalStrategy;
+AugmentedLocalStrategy.__isAugmented = true;
+
+export { AugmentedLocalStrategy as Strategy };
+export default AugmentedLocalStrategy;
