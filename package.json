@@ -1,6 +1,6 @@
 {
   "name": "apollo-passport-local",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Local strategy using email address and hashed, bcrypted password",
   "main": "lib/index.js",
   "scripts": {
