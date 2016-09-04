@@ -9,7 +9,7 @@ const resolvers = {
 
       const user = {
         emails: [ { address: email } ],
-        services: { password: { password: await this.hashPassword(password) } }
+        services: { password: { bcrypt: await this.hashPassword(password) } }
       };
 
       let userId;
@@ -62,7 +62,7 @@ const resolvers = {
 
       console.log(user);
       const storedPassword = user && user.services && user.services.password
-        && user.services.password.password;
+        && user.services.password.bcrypt;
       console.log('storedPassword', storedPassword);
 
       // TODO allow no password only if email set.  allow email as part of query?
@@ -78,7 +78,7 @@ const resolvers = {
 
       try {
         await this.db.assertUserServiceData(userId,
-          'password', { password: await this.hashPassword(newPassword) });
+          'password', { bcrypt: await this.hashPassword(newPassword) });
       } catch (err) {
         return err.message;
       }

@@ -2,6 +2,8 @@ import proxyquire from 'proxyquire';
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 
+import 'regenerator-runtime/runtime';
+
 chai.use(chaiAsPromised);
 const should = chai.should();
 
@@ -101,7 +103,7 @@ describe('apollo-passport-local', () => {
         context.createUser = async function(user) {
           user.should.deep.equal({
             emails: [ { address: 'email' }],
-            services: { password: { password: 'hashed:password ' }}
+            services: { password: { bcrypt: 'hashed:password ' }}
           });
           return 'elizabeth';
         };
@@ -168,12 +170,12 @@ describe('apollo-passport-local', () => {
         context.hashPassword = async (password) => `hashed:${password}`;
         context.db = {
           fetchUserById: async () => ({
-            services: { password: { password: password }}
+            services: { password: { bcrypt: password }}
           }),
           async assertUserServiceData(userId, service, data) {
             should.exist(userId);
             service.should.equal('password');
-            data.should.deep.equal({ password: `hashed:${password}` });
+            data.should.deep.equal({ bcrypt: `hashed:${password}` });
           }
         };
 
@@ -186,7 +188,7 @@ describe('apollo-passport-local', () => {
         context.comparePassword = async () => true;
         context.db = {
           fetchUserById: async () => ({
-            services: { password: { password: password }}
+            services: { password: { bcrypt: password }}
           }),
           async assertUserServiceData() {
             throw new Error('foo')

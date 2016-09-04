@@ -35,7 +35,7 @@ describe('apollo-passport-local - verify', () => {
         else if (email === 'valid-user')
           resolve({
             id: 'user1',
-            services: { password: { password: 'password' } }
+            services: { password: { bcrypt: 'password' } }
           });
         else throw new Error("unknown test email: " + email);
       });

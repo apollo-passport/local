@@ -5,7 +5,7 @@ export default function verify(email, password, done) {
         return done(null, false, "Invalid email");
 
       const storedPassword = user && user.services && user.services.password
-        && user.services.password.password;
+        && user.services.password.bcrypt;
       if (!storedPassword)
         return done(null, false, "No password set");
 
